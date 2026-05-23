@@ -60,10 +60,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getActiveApiKey(): String {
         val custom = _customApiKey.value.trim()
-        if (custom.isNotEmpty()) return custom
+        if (custom.isNotEmpty() && custom != "MY_GEMINI_API_KEY") return custom
         val builtIn = BuildConfig.GEMINI_API_KEY
-        if (builtIn == "MY_GEMINI_API_KEY") return ""
-        return builtIn
+        if (builtIn.isNotEmpty() && builtIn != "MY_GEMINI_API_KEY") return builtIn
+        return "AIzaSyBGZEP8_LuOUQFH92gNVRgVLiWDU-lH0rQ"
     }
 
     fun updateOfflineState() {
