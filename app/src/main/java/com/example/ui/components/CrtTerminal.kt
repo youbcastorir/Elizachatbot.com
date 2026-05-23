@@ -287,8 +287,6 @@ fun ChatScreen(
     currentInput: String,
     isGenerating: Boolean,
     isOfflineMode: Boolean,
-    customApiKey: String,
-    onCustomApiKeyChange: (String) -> Unit,
     onInputChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     onResetTerminal: () -> Unit
@@ -296,157 +294,11 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    var showKeyDialog by remember { mutableStateOf(false) }
 
     // AutoScroll to bottom when new messages appear
     LaunchedEffect(messages.size, isGenerating) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
-        }
-    }
-
-    if (showKeyDialog) {
-        Dialog(
-            onDismissRequest = { showKeyDialog = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .border(BorderStroke(2.dp, PhosphorGreenBright), RoundedCornerShape(8.dp))
-                    .background(RetroBlack)
-                    .padding(20.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = "+---------------------------------------+",
-                        fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenBright,
-                        fontSize = 11.sp,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "|      API ACCESS SYSTEM CONTROL        |",
-                        fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenBright,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "+---------------------------------------+",
-                        fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenBright,
-                        fontSize = 11.sp,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "THE CHATBOT SENDS PROMPTS TO GOOGLE GEMINI API.\n" +
-                               "IF THE CONNECTION IS OFFLINE OR RETURNS 403, YOU CAN ENTER YOUR PRIVATE API KEY OR DEFINE IT SECURELY IN GOOGLE AI STUDIO SECRETS.",
-                        fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenMid,
-                        fontSize = 12.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "توجيهات فك التشفير:\n" +
-                               "إذا واجهت مشكلة في الاتصال (مثل خطأ 403)، فهذا يعني أن مفتاح النظام المدمج غير متاح حالياً. يمكنك لصق مفتاح Gemini API الخاص بك بالأسفل وتفعيله لحل المشكلة فوراً.",
-                        fontFamily = FontFamily.Monospace,
-                        color = AmberYellow,
-                        fontSize = 11.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "INJECT DECRYPTER KEY (API KEY):",
-                        fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenBright,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    var tempKey by remember { mutableStateOf(customApiKey) }
-                    BasicTextField(
-                        value = tempKey,
-                        onValueChange = { tempKey = it },
-                        textStyle = TextStyle(
-                            fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenBright,
-                            fontSize = 14.sp
-                        ),
-                        cursorBrush = SolidColor(PhosphorGreenBright),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(BorderStroke(1.5.dp, PhosphorGreenBright), RoundedCornerShape(4.dp))
-                            .background(Color.Black)
-                            .padding(12.dp),
-                        decorationBox = { innerTextField ->
-                            if (tempKey.isEmpty()) {
-                                Text(
-                                    text = "PASTE AI_STUDIO_API_KEY HERE...",
-                                    fontFamily = FontFamily.Monospace,
-                                    color = PhosphorGreenDark,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            innerTextField()
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = { showKeyDialog = false }
-                        ) {
-                            Text(
-                                "ABORT",
-                                fontFamily = FontFamily.Monospace,
-                                color = PhosphorGreenMid,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Button(
-                            onClick = {
-                                onCustomApiKeyChange(tempKey)
-                                showKeyDialog = false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PhosphorGreenBright.copy(alpha = 0.15f),
-                                contentColor = PhosphorGreenBright
-                            ),
-                            border = BorderStroke(1.dp, PhosphorGreenBright),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                "SAVE & COMMIT",
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -492,43 +344,21 @@ fun ChatScreen(
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Burn Records Button
+                IconButton(
+                    onClick = onResetTerminal,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = PhosphorGreenBright
+                    ),
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .border(BorderStroke(1.dp, PhosphorGreenBright), RoundedCornerShape(4.dp))
                 ) {
-                    // API Key Settings Button
-                    IconButton(
-                        onClick = { showKeyDialog = true },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = PhosphorGreenBright
-                        ),
-                        modifier = Modifier
-                            .minimumInteractiveComponentSize()
-                            .border(BorderStroke(1.dp, PhosphorGreenBright), RoundedCornerShape(4.dp))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Configure manual API key",
-                            tint = PhosphorGreenBright
-                        )
-                    }
-
-                    // Burn Records Button
-                    IconButton(
-                        onClick = onResetTerminal,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = PhosphorGreenBright
-                        ),
-                        modifier = Modifier
-                            .minimumInteractiveComponentSize()
-                            .border(BorderStroke(1.dp, PhosphorGreenBright), RoundedCornerShape(4.dp))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Burn logs and reset clinical session",
-                            tint = PhosphorGreenBright
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Burn logs and reset clinical session",
+                        tint = PhosphorGreenBright
+                    )
                 }
             }
         },

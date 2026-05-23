@@ -26,7 +26,6 @@ class MainActivity : ComponentActivity() {
                 val currentInput by viewModel.currentInput.collectAsStateWithLifecycle()
                 val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
                 val isOfflineMode by viewModel.isOffline.collectAsStateWithLifecycle()
-                val customApiKey by viewModel.customApiKey.collectAsStateWithLifecycle()
 
                 if (isBooted) {
                     ChatScreen(
@@ -34,8 +33,6 @@ class MainActivity : ComponentActivity() {
                         currentInput = currentInput,
                         isGenerating = isGenerating,
                         isOfflineMode = isOfflineMode,
-                        customApiKey = customApiKey,
-                        onCustomApiKeyChange = { viewModel.updateCustomApiKey(it) },
                         onInputChange = { viewModel.onInputChange(it) },
                         onSendMessage = { viewModel.sendMessage() },
                         onResetTerminal = { viewModel.resetTerminal() }
