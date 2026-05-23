@@ -1,6 +1,6 @@
 {
-  "name": "ELIZA Chat",
-  "description": "A retro ELIZA-style chatbot with high-fidelity early computing aesthetics, active listening psychotherapy, and offline pattern-matching fallback.",
+  "name": "elizachatbot.com",
+  "description": "An advanced AI psychotherapist chatbot styled as a 1960s monochrome CRT mainframe terminal, paying tribute to Joseph Weizenbaum's legendary ELIZA.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

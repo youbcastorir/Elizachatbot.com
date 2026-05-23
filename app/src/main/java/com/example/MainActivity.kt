@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.ChatViewModel
 import com.example.ui.components.BootScreen
 import com.example.ui.components.ChatScreen
+import com.example.ui.components.TerminalThemeColor
 import com.example.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +27,9 @@ class MainActivity : ComponentActivity() {
                 val currentInput by viewModel.currentInput.collectAsStateWithLifecycle()
                 val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
                 val isOfflineMode by viewModel.isOffline.collectAsStateWithLifecycle()
+                val themeColorIndex by viewModel.themeColorIndex.collectAsStateWithLifecycle()
+
+                val activeTheme = TerminalThemeColor.fromIndex(themeColorIndex)
 
                 if (isBooted) {
                     ChatScreen(
@@ -33,14 +37,17 @@ class MainActivity : ComponentActivity() {
                         currentInput = currentInput,
                         isGenerating = isGenerating,
                         isOfflineMode = isOfflineMode,
+                        theme = activeTheme,
                         onInputChange = { viewModel.onInputChange(it) },
                         onSendMessage = { viewModel.sendMessage() },
-                        onResetTerminal = { viewModel.resetTerminal() }
+                        onResetTerminal = { viewModel.resetTerminal() },
+                        onToggleTheme = { viewModel.toggleThemeColor() }
                     )
                 } else {
                     BootScreen(
                         bootLogs = bootLogs,
                         isBooting = isBooting,
+                        theme = activeTheme,
                         onBootClick = { viewModel.startBootSequence() }
                     )
                 }

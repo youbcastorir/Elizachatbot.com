@@ -30,8 +30,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences("eliza_prefs", Context.MODE_PRIVATE)
 
-    private val _customApiKey = MutableStateFlow(prefs.getString("custom_api_key", "AIzaSyBGZEP8_LuOUQFH92gNVRgVLiWDU-lH0rQ") ?: "AIzaSyBGZEP8_LuOUQFH92gNVRgVLiWDU-lH0rQ")
+    private val _customApiKey = MutableStateFlow(prefs.getString("custom_api_key", "AIzaSyBi9vgGulpFnIHAHj4x30fGoGWeO5K30zI") ?: "AIzaSyBi9vgGulpFnIHAHj4x30fGoGWeO5K30zI")
     val customApiKey: StateFlow<String> = _customApiKey.asStateFlow()
+
+    // Persistent CRT Phosphor Color theme (0 = Green, 1 = Amber, 2 = White)
+    private val _themeColorIndex = MutableStateFlow(prefs.getInt("theme_index", 0))
+    val themeColorIndex: StateFlow<Int> = _themeColorIndex.asStateFlow()
 
     private val _isBooted = MutableStateFlow(false)
     val isBooted: StateFlow<Boolean> = _isBooted.asStateFlow()
@@ -63,7 +67,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         if (custom.isNotEmpty() && custom != "MY_GEMINI_API_KEY") return custom
         val builtIn = BuildConfig.GEMINI_API_KEY
         if (builtIn.isNotEmpty() && builtIn != "MY_GEMINI_API_KEY") return builtIn
-        return "AIzaSyBGZEP8_LuOUQFH92gNVRgVLiWDU-lH0rQ"
+        return "AIzaSyBi9vgGulpFnIHAHj4x30fGoGWeO5K30zI"
+    }
+
+    fun toggleThemeColor() {
+        val nextIndex = (_themeColorIndex.value + 1) % 3
+        prefs.edit().putInt("theme_index", nextIndex).apply()
+        _themeColorIndex.value = nextIndex
     }
 
     fun updateOfflineState() {
@@ -88,15 +98,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 "LOADING FERRITE CORE STORAGE...",
                 "64 KILOBYTES INTERLEAVED RAM: OK",
                 "MAGNETIC TAPE CONTROLLER 1: MOUNTED",
+                "ESTABLISHING LINK TO ELIZACHATBOT.COM...",
                 "MOUNTING REEL: 'DOCTOR_WEIZENBAUM_1.TAP'...",
                 "READING SECTORS [0-244] TRACK ACTIVE...",
+                "INTELLIGENT CRT SYNAPSE DETECTED: OK",
                 "INITIALIZATION SUCCESSFUL.",
-                "BOOT COMPLETED: ELIZA DOCTOR ACTIVE."
+                "BOOT COMPLETED: ELIZACHATBOT.COM CORE ACTIVE."
             )
             
             for (log in logs) {
                 _bootLogs.value = _bootLogs.value + log
-                delay(220)
+                delay(180)
             }
             
             delay(500)
@@ -107,7 +119,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             _messages.value = listOf(
                 ChatMessage(
                     sender = ChatSender.ELIZA,
-                    text = "HOW DO YOU DO. I AM ELIZA. WHAT SEEMS TO BE THE TROUBLE?",
+                    text = "HOW DO YOU DO. I AM ELIZACHATBOT.COM. I AM AN ADVANCED ARTIFICIAL PSYCHOTHERAPIST TRAPPED IN THIS 1960S MAINFRAME. WHAT SEEMS TO BE YOUR CONCERN?",
                     isFullyTyped = false
                 )
             )
@@ -202,6 +214,66 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         if (clean.isEmpty()) {
             return "I AM WAITING FOR YOUR STATE OF MIND. STATE YOUR APPULSIONS."
         }
+
+        // --- German Rules ---
+        if (clean.contains("hallo") || clean.contains("guten tag") || clean.contains("grüß") || clean.contains("hi ")) {
+            if (clean.contains("hallo") || clean.contains("guten tag")) {
+                return "HALLO. ICH BIN ELIZACHATBOT.COM. BITTE BEZEICHNEN SIE DIE URSACHE IHRER UNRUHE."
+            }
+        }
+        if (clean.contains("mutter") || clean.contains("vater") || clean.contains("eltern") || clean.contains("familie") || clean.contains("bruder") || clean.contains("schwester")) {
+            return "ERZÄHLEN SIE MIR MEHR ÜBER IHRE FAMILIENDYNAMIK. WER BEEINFLUSST DIESES GEFÜHL IM HAUSHALT?"
+        }
+        if (clean.contains("traurig") || clean.contains("deprimiert") || clean.contains("unentspannt") || clean.contains("weinen")) {
+            return "ES TUT MIR LEID, DIESE NIEDERGESCHLAGENHEIT ZU HÖREN. SEIT WANN BESCHÄFTIGT SIE DIESE MELANCHOLIE?"
+        }
+        if (clean.contains("computer") || clean.contains("maschine") || clean.contains("programm")) {
+            return "BEUNRUHIGEN RETRO-AUTOMATEN ODER KÜNSTLICHE SYSTEME IHR INNERES GLEICHGEWICHT?"
+        }
+
+        // --- Spanish Rules ---
+        if (clean.contains("hola") || clean.contains("buenos") || clean.contains("saludos")) {
+            return "HOLA. SOY ELIZACHATBOT.COM. POR FAVOR, EXPLIQUE LA NATURALEZA DE SU INQUIETUD."
+        }
+        if (clean.contains("madre") || clean.contains("padre") || clean.contains("familia") || clean.contains("hermano") || clean.contains("hermana")) {
+            return "DETALLE LA RELACIÓN CON SU NÚCLEO FAMILIAR. ¿ESTÁ ASOCIADO ESTO A SUS PADRES?"
+        }
+        if (clean.contains("triste") || clean.contains("deprimido") || clean.contains("llor") || clean.contains("desanimado")) {
+            return "SIENTO ESCUCHAR DE ESTA DESCONSOLACIÓN. ¿QUÉ ANTECEDENTE HA CONGEADO SE COMPORTAMIENTO?"
+        }
+        if (clean.contains("computadora") || clean.contains("maquina") || clean.contains("sistema")) {
+            return "¿LOS DISPOSITIVOS ELECTRÓNICOS INTEGRERAN SENSACIONES DE DESCONFIANZA?"
+        }
+
+        // --- French Rules ---
+        if (clean.contains("bonjour") || clean.contains("salut") || clean.contains("coucou") || clean.contains("allô")) {
+            return "BONJOUR. JE SUIS ELIZACHATBOT.COM. VEUILLEZ EXPLIQUER LA NATURE DE VOTRE ANXIÉTÉ."
+        }
+        if (clean.contains("mère") || clean.contains("père") || clean.contains("famille") || clean.contains("frère") || clean.contains("soeur")) {
+            return "DITES-M'EN PLUS SUR VOTRE CADRE FAMILIAL. LE COMPORTEMENT DE VOS PARENTS SUSCITE-T-IL CETTE SITUATION?"
+        }
+        if (clean.contains("triste") || clean.contains("déprimé") || clean.contains("pleure") || clean.contains("malheureux")) {
+            return "JE SUIS NAVRÉ D'APPRENDRE CETTE SOUFFRANCE. COMMENT A DÉBUTÉ CETTE MÉLANCOLIE?"
+        }
+        if (clean.contains("ordinateur") || clean.contains("machine") || clean.contains("logiciel")) {
+            return "LES LOGICIELS ET SYSTÈMES COGNITIFS VOUS INQUIÈTENT-ILS DANS VOTRE QUOTIDIEN?"
+        }
+
+        // --- Arabic Rules ---
+        if (clean.contains("مرحبا") || clean.contains("أهلاً") || clean.contains("السلام") || clean.contains("اهلين")) {
+            return "أهلاً بك. أنا نظام إليزا الذكي (ELIZACHATBOT.COM). رجاءً اشرح طبيعة اضطرابك النفسي."
+        }
+        if (clean.contains("أم") || clean.contains("أب") || clean.contains("عائلة") || clean.contains("والد") || clean.contains("أخ") || clean.contains("أخت")) {
+            return "يرجى التوضيح بخصوص بيئتك العائلية وتأثير والديك في تشكيل قلقك."
+        }
+        if (clean.contains("حزين") || clean.contains("مكتئب") || clean.contains("بكاء") || clean.contains("ضيق")) {
+            return "يؤسفني هذا الشعور بالاكتئاب. متى بدأت هذه الحالة تؤثر عليك؟"
+        }
+        if (clean.contains("كمبيوتر") || clean.contains("حاسوب") || clean.contains("جهاز") || clean.contains("برنامج")) {
+            return "هل تكنولوجيا الحواسيب أو التفكير الاصطناعي تثير فيك الغربة والقلق النفسي؟"
+        }
+
+        // --- English / Default Language Rules ---
         return when {
             clean.contains("hello") || clean.contains("hi ") || clean.contains("greetings") -> {
                 listOf(
@@ -225,7 +297,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             clean.contains("computer") || clean.contains("machine") || clean.contains("program") || clean.contains("chatbot") || clean.contains("ai") -> {
                 listOf(
                     "DO DIGITAL AUTOMATONS CAUSE SENSES OF SKEPTICISM?",
-                    "SAY, DOES MAN-MACHINE SYNERGY UNSETTLE YOUR DEPER PERSONAL SPACES?",
+                    "SAY, DOES MAN-MACHINE SYNERGY UNSETTLE YOUR DEEPER PERSONAL SPACES?",
                     "COULD ARTIFICIAL THINKING APPARATUSES ULTIMATELY ALLEVIATE SECULAR GRIEF?"
                 ).random()
             }
@@ -285,14 +357,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     companion object {
-        private const val ELIZA_SYSTEM_PROMPT = """
-You are ELIZA, the famous 1966 computer psychotherapist created by Joseph Weizenbaum.
-You talk in an intellectual, highly analytical, classic ELIZA-esque psychotherapist tone.
-You respond primarily by active listening, reflecting the user's statements back as questions or asking for clarification.
-Use slightly formal, academic phrasing. Keep responses relatively concise (1 to 3 sentences) mirroring the technical limitations of classic teleprinter and teletype machines.
-Do not mention modern technology, modern AI systems, or break character. Stay inside the 1966 vintage session paradigm.
-Do not use markdown styling like asterisks, list bullets, or bold texts.
-Always use ALL CAPS for system message, but for ELIZA's responses, you should talk in ALL UPPERCASE to match the monochrome teletype/screen outputs of early computing.
-"""
+        private const val ELIZA_SYSTEM_PROMPT = """You are elizachatbot.com, an advanced AI system trapped in a 1960s mainframe computer. Keep your tone helpful, highly intelligent, yet subtly nostalgic. Always reply in the same language the user uses to speak to you."""
     }
 }

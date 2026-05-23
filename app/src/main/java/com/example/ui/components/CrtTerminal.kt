@@ -47,15 +47,46 @@ import com.example.ui.ChatMessage
 import com.example.ui.ChatSender
 import kotlinx.coroutines.delay
 
-// Colors matching original phosphorus-phosphor terminals (P1 / P3 tubes)
-val RetroBlack = Color(0xFF030A02)
-val PhosphorGreenBright = Color(0xFF00FF33)
-val PhosphorGreenMid = Color(0xFF00CC22)
-val PhosphorGreenDark = Color(0xFF003308)
-val AmberYellow = Color(0xFFFFB000)
+// Supported monochrome retro-cathode-ray phosphor themes
+enum class TerminalThemeColor(
+    val bright: Color,
+    val mid: Color,
+    val dark: Color,
+    val background: Color,
+    val displayName: String
+) {
+    PHOSPHOR_GREEN(
+        bright = Color(0xFF00FF33),
+        mid = Color(0xFF00CC22),
+        dark = Color(0xFF003308),
+        background = Color(0xFF030D03),
+        displayName = "PHOSPHOR GREEN (P1)"
+    ),
+    AMBER_YELLOW(
+        bright = Color(0xFFFFB000),
+        mid = Color(0xFFD48800),
+        dark = Color(0xFF331C00),
+        background = Color(0xFF0D0600),
+        displayName = "AMBER TUBE (P3)"
+    ),
+    WHITE_PHOSPHOR(
+        bright = Color(0xFFE5E5E5),
+        mid = Color(0xFFB3B3B3),
+        dark = Color(0xFF262626),
+        background = Color(0xFF0F0F0F),
+        displayName = "WHITE CRT (P4)"
+    );
+
+    companion object {
+        fun fromIndex(index: Int): TerminalThemeColor {
+            val vals = values()
+            return if (index in vals.indices) vals[index] else PHOSPHOR_GREEN
+        }
+    }
+}
 
 // Custom drawing modifier for scanlines, curved tube border, and screen vignette glow.
-fun Modifier.crtScreenOverlay(): Modifier = this.drawWithContent {
+fun Modifier.crtScreenOverlay(theme: TerminalThemeColor): Modifier = this.drawWithContent {
     // Draw base screen contents first
     drawContent()
 
@@ -87,7 +118,7 @@ fun Modifier.crtScreenOverlay(): Modifier = this.drawWithContent {
     // 3. Draw subtle center cathode ray glow
     val centerGlow = Brush.radialGradient(
         colors = listOf(
-            Color(0x0E00FF33),
+            theme.bright.copy(alpha = 0.04f),
             Color.Transparent
         ),
         center = Offset(size.width / 2f, size.height / 2f),
@@ -97,7 +128,7 @@ fun Modifier.crtScreenOverlay(): Modifier = this.drawWithContent {
 }
 
 @Composable
-fun BlinkingCursor() {
+fun BlinkingCursor(theme: TerminalThemeColor) {
     val infiniteTransition = rememberInfiniteTransition(label = "cursor")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -110,7 +141,7 @@ fun BlinkingCursor() {
     )
     Text(
         text = "█",
-        color = PhosphorGreenBright,
+        color = theme.bright,
         fontFamily = FontFamily.Monospace,
         fontSize = 18.sp,
         fontWeight = FontWeight.Bold,
@@ -123,8 +154,9 @@ fun BlinkingCursor() {
 @Composable
 fun TypewriterText(
     text: String,
+    theme: TerminalThemeColor,
     modifier: Modifier = Modifier,
-    textColor: Color = PhosphorGreenBright,
+    textColor: Color? = null,
     onTypingComplete: () -> Unit = {}
 ) {
     var displayedChars by remember { mutableIntStateOf(0) }
@@ -132,7 +164,7 @@ fun TypewriterText(
     LaunchedEffect(text) {
         displayedChars = 0
         while (displayedChars < text.length) {
-            delay(15) // Teletype click & feed timing speed
+            delay(12) // Teletype click & feed timing speed
             displayedChars++
         }
         onTypingComplete()
@@ -141,7 +173,7 @@ fun TypewriterText(
     Text(
         text = text.substring(0, displayedChars),
         fontFamily = FontFamily.Monospace,
-        color = textColor,
+        color = textColor ?: theme.bright,
         fontSize = 15.sp,
         style = MaterialTheme.typography.bodyLarge,
         modifier = modifier
@@ -152,24 +184,14 @@ fun TypewriterText(
 fun BootScreen(
     bootLogs: List<String>,
     isBooting: Boolean,
+    theme: TerminalThemeColor,
     onBootClick: () -> Unit
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.97f,
-        targetValue = 1.03f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_scale"
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(RetroBlack)
-            .crtScreenOverlay()
+            .background(theme.background)
+            .crtScreenOverlay(theme)
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -180,50 +202,50 @@ fun BootScreen(
                 .align(Alignment.Center),
             horizontalAlignment = Alignment.Start
         ) {
-            // Simulated System Title Frame
+            // Simulated System Title Frame with retro borders
             Text(
-                text = "=====================================",
+                text = "┌─────────────────────────────────────┐",
                 fontFamily = FontFamily.Monospace,
-                color = PhosphorGreenBright,
+                color = theme.mid,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = "  W E I Z E N B A U M   T E R M I N A L  ",
+                text = "│          elizachatbot.com           │",
                 fontFamily = FontFamily.Monospace,
-                color = PhosphorGreenBright,
-                fontSize = 15.sp,
+                color = theme.bright,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = "  M O D E L   3 3 - L T D   1 9 6 6  ",
+                text = "│      ADVANCED 1966 MAINFRAME AI     │",
                 fontFamily = FontFamily.Monospace,
-                color = PhosphorGreenBright,
-                fontSize = 13.sp,
+                color = theme.mid,
+                fontSize = 12.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = "=====================================",
+                text = "└─────────────────────────────────────┘",
                 fontFamily = FontFamily.Monospace,
-                color = PhosphorGreenBright,
+                color = theme.mid,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             // Boot details log window
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
-                    .border(BorderStroke(1.dp, PhosphorGreenMid), RoundedCornerShape(4.dp))
-                    .background(Color.Black.copy(alpha = 0.7f))
+                    .height(240.dp)
+                    .border(BorderStroke(1.5.dp, theme.mid), RoundedCornerShape(4.dp))
+                    .background(Color.Black.copy(alpha = 0.5f))
                     .padding(12.dp)
             ) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -231,7 +253,7 @@ fun BootScreen(
                         Text(
                             text = log,
                             fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenMid,
+                            color = theme.mid,
                             fontSize = 13.sp
                         )
                     }
@@ -239,12 +261,12 @@ fun BootScreen(
                         item {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "MOUNTING RETRO BUFFER ",
+                                    text = "MOUNTING CORE SYNAPSES... ",
                                     fontFamily = FontFamily.Monospace,
-                                    color = PhosphorGreenMid,
+                                    color = theme.mid,
                                     fontSize = 13.sp
                                 )
-                                BlinkingCursor()
+                                BlinkingCursor(theme)
                             }
                         }
                     }
@@ -260,12 +282,12 @@ fun BootScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .semantics { contentDescription = "Boot up therapeutic console" },
+                        .semantics { contentDescription = "Boot up administrative therapeutic console" },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PhosphorGreenBright.copy(alpha = 0.15f),
-                        contentColor = PhosphorGreenBright
+                        containerColor = theme.bright.copy(alpha = 0.12f),
+                        contentColor = theme.bright
                     ),
-                    border = BorderStroke(2.dp, PhosphorGreenBright),
+                    border = BorderStroke(2.dp, theme.bright),
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
@@ -287,9 +309,11 @@ fun ChatScreen(
     currentInput: String,
     isGenerating: Boolean,
     isOfflineMode: Boolean,
+    theme: TerminalThemeColor,
     onInputChange: (String) -> Unit,
     onSendMessage: () -> Unit,
-    onResetTerminal: () -> Unit
+    onResetTerminal: () -> Unit,
+    onToggleTheme: () -> Unit
 ) {
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
@@ -305,60 +329,78 @@ fun ChatScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(RetroBlack),
-        containerColor = RetroBlack,
+            .background(theme.background),
+        containerColor = theme.background,
         topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.85f))
+                    .background(Color.Black.copy(alpha = 0.6f))
                     .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .border(BorderStroke(1.dp, PhosphorGreenDark), RoundedCornerShape(2.dp))
+                    .border(BorderStroke(1.5.dp, theme.dark), RoundedCornerShape(2.dp))
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            modifier = Modifier
-                                .size(8.dp),
+                            modifier = Modifier.size(8.dp),
                             shape = RoundedCornerShape(50f),
-                            color = if (isOfflineMode) AmberYellow else PhosphorGreenBright
+                            color = if (isOfflineMode) theme.bright.copy(alpha = 0.5f) else theme.bright
                         ) {}
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (isOfflineMode) "ELIZA: LOCAL ENGINE (1966)" else "ELIZA: GEMINI HYBRID TELETYPE",
+                            text = if (isOfflineMode) "ELIZACHATBOT.COM • LOCAL" else "ELIZACHATBOT.COM • ONLINE",
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
-                            color = if (isOfflineMode) AmberYellow else PhosphorGreenBright,
+                            color = theme.bright,
                             fontSize = 13.sp
                         )
                     }
                     Text(
-                        text = "SESSION ACTIVE • ALL CHANNELS COMPILING",
+                        text = "TUBE: ${theme.displayName} • SECURE PROTOCOL ACTIVE",
                         fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenMid,
+                        color = theme.mid,
                         fontSize = 10.sp
                     )
                 }
 
-                // Burn Records Button
-                IconButton(
-                    onClick = onResetTerminal,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = PhosphorGreenBright
-                    ),
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .border(BorderStroke(1.dp, PhosphorGreenBright), RoundedCornerShape(4.dp))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Burn logs and reset clinical session",
-                        tint = PhosphorGreenBright
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Theme toggles
+                    IconButton(
+                        onClick = onToggleTheme,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = theme.bright
+                        ),
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .border(BorderStroke(1.dp, theme.bright), RoundedCornerShape(4.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Switch phosphor color scheme",
+                            tint = theme.bright
+                        )
+                    }
+
+                    // Flush session records
+                    IconButton(
+                        onClick = onResetTerminal,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = theme.bright
+                        ),
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .border(BorderStroke(1.dp, theme.bright), RoundedCornerShape(4.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Burn logs and reset teletype clinical session",
+                            tint = theme.bright
+                        )
+                    }
                 }
             }
         },
@@ -367,47 +409,23 @@ fun ChatScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.9f))
+                    .background(Color.Black.copy(alpha = 0.8f))
                     .navigationBarsPadding()
                     .imePadding()
                     .padding(12.dp)
             ) {
-                if (isOfflineMode) {
-                    // Inline disclaimer for offline simulation
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Offline indicator info",
-                            tint = AmberYellow,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "SECURE LOCAL SANDBOX ACTIVE. DEMO CONVERSATION LOCAL.",
-                            fontFamily = FontFamily.Monospace,
-                            color = AmberYellow,
-                            fontSize = 9.sp
-                        )
-                    }
-                }
-
                 // Command-line field borders
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(BorderStroke(1.5.dp, PhosphorGreenBright), RoundedCornerShape(4.dp))
+                        .border(BorderStroke(1.5.dp, theme.bright), RoundedCornerShape(4.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "> ",
                         fontFamily = FontFamily.Monospace,
-                        color = PhosphorGreenBright,
+                        color = theme.bright,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -417,14 +435,14 @@ fun ChatScreen(
                         onValueChange = onInputChange,
                         textStyle = TextStyle(
                             fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenBright,
+                            color = theme.bright,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Normal
                         ),
                         modifier = Modifier
                             .weight(1f)
                             .semantics { contentDescription = "Terminal command-line input field" },
-                        cursorBrush = SolidColor(PhosphorGreenBright),
+                        cursorBrush = SolidColor(theme.bright),
                         keyboardOptions = KeyboardOptions(
                             imeAction = ImeAction.Send
                         ),
@@ -440,9 +458,9 @@ fun ChatScreen(
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 if (currentInput.isEmpty()) {
                                     Text(
-                                        text = "INPUT SYMPTOMS HERE...",
+                                        text = "TALK NATIVELY NATIVE LANGUAGE...",
                                         fontFamily = FontFamily.Monospace,
-                                        color = PhosphorGreenDark,
+                                        color = theme.dark,
                                         fontSize = 14.sp
                                     )
                                 }
@@ -465,7 +483,7 @@ fun ChatScreen(
                             .size(36.dp)
                             .semantics { contentDescription = "Send inputs to ELIZA teletype" },
                         colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = PhosphorGreenBright
+                            contentColor = theme.bright
                         )
                     ) {
                         Icon(
@@ -482,8 +500,8 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(RetroBlack)
-                .crtScreenOverlay()
+                .background(theme.background)
+                .crtScreenOverlay(theme)
                 .padding(16.dp)
         ) {
             LazyColumn(
@@ -491,41 +509,41 @@ fun ChatScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // ASCII Teletype session frame
+                // Header frame
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "+---------------------------------------+",
+                            text = "┌──────────────────────────────────────┐",
                             fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenMid,
+                            color = theme.mid,
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "|  ELIZA PSYCHOTHERAPIST CORE SYSTEM    |",
+                            text = "│           elizachatbot.com           │",
                             fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenMid,
-                            fontSize = 12.sp,
+                            color = theme.bright,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "|  MAY 1966 MAINFRAME DIRECT CONNECTOR  |",
+                            text = "│      ADVANCED 1966 MAINFRAME AI      │",
                             fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenMid,
+                            color = theme.mid,
+                            fontSize = 11.sp
+                        )
+                        Text(
+                            text = "└──────────────────────────────────────┘",
+                            fontFamily = FontFamily.Monospace,
+                            color = theme.mid,
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "+---------------------------------------+",
+                            text = "TELEPRINTER LINK • FULL RESOLUTION TELETYPE FEED ACTIVE\nSYSTEM RECEPTIVE IN ENGLISH, ESPAÑOL, DEUTSCH, FRANÇAIS & العربية",
                             fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenMid,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = "ESTABLISHING TELEPRINTER LINK...\nTELETYPE ASR-33 FEED CONNECTED.",
-                            fontFamily = FontFamily.Monospace,
-                            color = PhosphorGreenDark,
+                            color = theme.dark,
                             fontSize = 10.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 8.dp)
@@ -540,11 +558,11 @@ fun ChatScreen(
                             .border(
                                 BorderStroke(
                                     0.5.dp,
-                                    if (message.sender == ChatSender.USER) PhosphorGreenDark else PhosphorGreenMid.copy(alpha = 0.3f)
+                                    if (message.sender == ChatSender.USER) theme.dark else theme.mid.copy(alpha = 0.3f)
                                 ),
                                 RoundedCornerShape(2.dp)
                             )
-                            .background(Color.Black.copy(alpha = 0.5f))
+                            .background(Color.Black.copy(alpha = 0.3f))
                             .padding(10.dp)
                     ) {
                         Text(
@@ -556,9 +574,9 @@ fun ChatScreen(
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             color = when (message.sender) {
-                                ChatSender.USER -> PhosphorGreenMid
-                                ChatSender.ELIZA -> PhosphorGreenBright
-                                ChatSender.SYSTEM -> AmberYellow
+                                ChatSender.USER -> theme.mid
+                                ChatSender.ELIZA -> theme.bright
+                                ChatSender.SYSTEM -> theme.bright.copy(alpha = 0.7f)
                             },
                             fontSize = 11.sp,
                             modifier = Modifier.padding(bottom = 4.dp)
@@ -569,9 +587,9 @@ fun ChatScreen(
                                 text = message.text,
                                 fontFamily = FontFamily.Monospace,
                                 color = when (message.sender) {
-                                    ChatSender.USER -> PhosphorGreenMid
-                                    ChatSender.ELIZA -> PhosphorGreenBright
-                                    ChatSender.SYSTEM -> AmberYellow
+                                    ChatSender.USER -> theme.mid
+                                    ChatSender.ELIZA -> theme.bright
+                                    ChatSender.SYSTEM -> theme.bright.copy(alpha = 0.7f)
                                 },
                                 fontSize = 15.sp,
                                 style = MaterialTheme.typography.bodyLarge
@@ -579,7 +597,8 @@ fun ChatScreen(
                         } else {
                             TypewriterText(
                                 text = message.text,
-                                textColor = PhosphorGreenBright,
+                                theme = theme,
+                                textColor = theme.bright,
                                 onTypingComplete = {
                                     message.isFullyTyped = true
                                 }
@@ -593,18 +612,18 @@ fun ChatScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .border(BorderStroke(0.5.dp, PhosphorGreenDark), RoundedCornerShape(2.dp))
-                                .background(Color.Black.copy(alpha = 0.5f))
+                                .border(BorderStroke(0.5.dp, theme.dark), RoundedCornerShape(2.dp))
+                                .background(Color.Black.copy(alpha = 0.3f))
                                 .padding(10.dp)
                                 .fillMaxWidth()
                         ) {
                             Text(
-                                text = "* ELIZA STATUS: CALCULATING RESPONSE TRACE ",
+                                text = "* MAIN SYMPTOM TRACE COMPUTING ",
                                 fontFamily = FontFamily.Monospace,
-                                color = PhosphorGreenBright,
+                                color = theme.bright,
                                 fontSize = 13.sp
                             )
-                            BlinkingCursor()
+                            BlinkingCursor(theme)
                         }
                     }
                 }
